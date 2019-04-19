@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+	<style type="text/css">
+		.container{
+			width : 900px;
+			transform: translateX(-50%);
+			margin-left: 50%;
+		}
+		#todo{
+			width: 100%;
+		}
+		.task, .deleteTask{
+			display: inline-block;
+			padding: 20px;
+		}
+		.TaskList{
+			margin-top: 10px;
+			/*border: 1px solid black;*/
+			width: 100%;
+			box-sizing: border-box;
+		}
+		.task{
+			width: 100%;
+			border: 1px solid black;
+			box-sizing: border-box;
+			transition: 0.2s;
+			cursor: pointer;
+		}
+		.task:hover, .InputField:hover{
+			/*transform: translateX(-50%);*/
+			box-shadow: 1px 1px 10px gray;
+		}
+		.text{
+			transform: translateX(-50%);
+			transition: 0.2s;
+		}
+		.task:hover .text{
+			margin-left: 47%;
+		}
+		.InputField{
+			width: 98%;
+			border: 1px solid gray;
+			padding: 1%;
+			border-radius: 30px;
+		}
+		.inputField{
+			width: 100%;
+			border: none;
+			outline: none;
+			text-align: center;
+			padding: 7px 0px 7px 0px;
+			font-size: 25px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div id="todo"></div>
+	</div>
+
+
+<script type="text/babel">
+	class List extends React.Component {
+		render(){
+			return (
+				<div className='TaskList'>
+					<div className="task" onClick={() => this.props.onDelete(this.props.task.id)}>
+						<spam className="text">{this.props.task.task}</spam>
+					</div>
+				</div>
+			)
+		}
+	}
+
+	class InputTask extends React.Component {
+		state = {
+			 task : ''
+		}
+		 updateTask = (e)=>{
+			 this.setState({task : e.target.value})
+		}
+		keydownevent = (e)=>{
+			if(e.keyCode==13)
+			{ 
+				e.target.value = ''
+				this.props.addTask(this.state.task)
+			}
+		}
+	 	render(){
+	 		return (
+				<div className='InputField'>
+					<div className="InputContainer">
+						<input type="text" placeholder="Enter your task" onChange = {this.updateTask} onKeyDown={this.keydownevent} className="inputField" />
+					</div>
+	 			</div>
+	 		)
+	 	}
+	 }
+
+	class TodoList extends React.Component {
+		state = {
+			tasks : []
+		}
+		assignId = 1
+
+		createTaskObject = (taskName)=>{
+			return ({
+				task : taskName,
+				id : this.assignId++
+			})
+		}
+
+		deleteTask = (id)=>{
+			var task = this.state.tasks.filter(task => {
+				return task.id != id
+			})
+			var request = new XMLHttpRequest()
+			request.onload = ()=>{
+				if(request.status === 200){
+					console.log('data saved')
+				}
+			}
+			request.open('POST','delete')
+			request.send(id)
+			this.setState({tasks : task})
+		}
+
+		addTask = (taskName)=>{
+			var tasks = [...this.state.tasks,this.createTaskObject(taskName)]
+			var request = new XMLHttpRequest()
+			request.onload = ()=>{
+				if(request.status === 200){
+					console.log('data saved')
+				}
+			}
+			request.open('POST','todo')
+			request.send(JSON.stringify(tasks))
+			this.setState({tasks : tasks})
+		}
+		componentDidMount(){
+			var request = new XMLHttpRequest()
+			request.onload = ()=>{
+				if(request.status === 200){
+					var tasks = JSON.parse(request.responseText)
+					tasks = JSON.parse(tasks)
+					if(tasks.length > 0){
+						this.assignId = tasks[tasks.length-1].id + 1
+						this.setState({tasks : tasks})
+					}
+				}
+			}
+			request.open('GET','todo')
+			request.send()
+		}
+		render(){
+			return(
+				<div className='TodoList'>
+					<InputTask
+					 addTask = {this.addTask} />
+					 {
+						 this.state.tasks.map(task => <List 
+						 task = {task} 
+						 key={task.id} 
+						 onDelete = {this.deleteTask}/>)
+					 }
+				</div>
+			)
+		}
+	}
+	ReactDOM.render(<TodoList />,document.querySelector('#todo'));
+</script>
+</body>
+</html>
+
+<!--  <button onClick={() => this.props.addTask(this.state.task)} className="button">+</button> -->
